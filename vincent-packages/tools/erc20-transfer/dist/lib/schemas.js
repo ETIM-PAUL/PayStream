@@ -27,7 +27,7 @@ export const toolParamsSchema = z.object({
         .int()
         .positive("Chain ID must be a positive integer")
         .optional()
-        .default(8453), // Default to Base mainnet
+        .default(175188), // Default to Base mainnet
 });
 /**
  * Precheck success result schema

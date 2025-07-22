@@ -182,12 +182,12 @@ import { bundledVincentTool as erc20TransferTool } from "../../vincent-packages/
   const transactionHashes: string[] = [];
 
   const TEST_TOOL_PARAMS = {
-    to: accounts.delegatee.ethersWallet.address, // Transfer to self for testing
-    amount: "0.000001",
-    tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base USDC Contract Address
-    tokenDecimals: 6,
-    rpcUrl: "https://base.llamarpc.com",
-    chainId: 8453,
+    to: "0x0daAd898fd44B4af14d0d169c1bbA4f13bcD7D26", // Transfer to self for testing
+    amount: "0.00000000000000001",
+    tokenAddress: "0xF77025Db69882AD1c7f18D2A1C5B8821C091916C", // Base USDC Contract Address
+    tokenDecimals: 18,
+    rpcUrl: "https://yellowstone-rpc.litprotocol.com/",
+    chainId: 175188,
   };
 
   const precheck = async () => {
