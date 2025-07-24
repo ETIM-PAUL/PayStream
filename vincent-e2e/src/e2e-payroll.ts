@@ -69,8 +69,7 @@ const domain = {
     {
       cidToNameMap: {
         [payrollTool.ipfsCid]: "Payroll Tool",
-        [cycleStatusPolicyMetadata.ipfsCid]: "Cycle Status Policy",
-        [signaturePolicyMetadata.ipfsCid]: "Signature Policy",
+        [cycleStatusPolicyMetadata.ipfsCid]: "Cycle Status Policy"
       },
       debug: true,
     }
