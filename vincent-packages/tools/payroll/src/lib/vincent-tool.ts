@@ -4,7 +4,8 @@ import {
   supportedPoliciesForTool,
 } from "@lit-protocol/vincent-tool-sdk";
 import "@lit-protocol/vincent-tool-sdk/internal";
-import { bundledVincentPolicy } from "../../../../policies/payroll-policy/dist/index.js";
+import { bundledVincentPolicy } from "../../../../policies/cycle_status_policy/dist/index.js";
+import { bundledVincentPolicy as bundledVincentSignaturesPolicy } from "../../../../policies/double_signature_policy/dist/index.js";
 
 import {
   executeFailSchema,
@@ -13,7 +14,6 @@ import {
   precheckSuccessSchema,
   toolParamsSchema,
   employeeSchema,
-  ToolParams,
 } from "./schemas";
 
 import { laUtils } from "@lit-protocol/vincent-scaffold-sdk";
@@ -25,18 +25,27 @@ import {
 } from "./helpers";
 import { commitAllowedPolicies } from "./helpers/commit-allowed-policies";
 
-const SendLimitPolicy = createVincentToolPolicy({
+const Cycle_EmployeeStatus_Policy = createVincentToolPolicy({
   toolParamsSchema,
   bundledVincentPolicy,
   toolParameterMappings: {
-    employees:"employees"
+    employees:"employees",
+    company:"company"
+  }
+});
+const DoubleSignaturePolicy = createVincentToolPolicy({
+  toolParamsSchema,
+  bundledVincentPolicy:bundledVincentSignaturesPolicy,
+  toolParameterMappings: {
+    employees:"employees",
+    company:"company"
   }
 });
 
 export const vincentTool = createVincentTool({
   packageName: "@agentic-ai/vincent-tool-payroll" as const,
   toolParamsSchema,
-  supportedPolicies: supportedPoliciesForTool([SendLimitPolicy]),
+  supportedPolicies: supportedPoliciesForTool([Cycle_EmployeeStatus_Policy, DoubleSignaturePolicy]),
 
   precheckSuccessSchema,
   precheckFailSchema,
@@ -48,6 +57,8 @@ export const vincentTool = createVincentTool({
     const errors: string[] = [];
     let validEmployees = 0;
     let invalidEmployees = 0;
+
+    console.log("emp", toolParams.employees)
 
     for (const [i, emp] of toolParams.employees.entries()) {
       const result = employeeSchema.safeParse(emp);

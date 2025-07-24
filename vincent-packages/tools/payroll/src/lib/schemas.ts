@@ -4,13 +4,29 @@ import { z } from "zod";
  * Employee schema
  */
 export const employeeSchema = z.object({
+  id: z.string(),
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
   position: z.string().min(1, "Position required"),
   salary: z
     .string()
     .regex(/^[0-9]+(\.[0-9]+)?$/, "Invalid salary format")
     .refine((val) => parseFloat(val) > 0, "Salary must be greater than 0"),
-  status: z.enum(["active", "inactive"]),
+  dob: z
+    .string(),
+  dateOfEmployment: z
+    .string(),
+  status: z.string(),
+});
+
+/**
+ * Company schema (for toolParams)
+*/
+export const companySchema = z.object({
+  id: z.string(),
+  owner: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+  admin1: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+  admin2: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+  lastPaymentCycle: z.string()
 });
 
 /**
@@ -18,6 +34,7 @@ export const employeeSchema = z.object({
  */
 export const toolParamsSchema = z.object({
   employees: z.array(employeeSchema),
+  company: companySchema,
   tokenAddress: z
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid token contract address"),
@@ -65,7 +82,7 @@ export const executeSuccessSchema = z.object({
       address: z.string(),
       position: z.string(),
       salary: z.string(),
-      status: z.enum(["active", "inactive"]),
+      status: z.string(),
       txHash: z.string().optional(),
       error: z.string().optional(),
     })

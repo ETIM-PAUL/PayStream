@@ -26,7 +26,7 @@ function setLastPaid(address: string, timestamp: number) {
 }
 
 export const vincentPolicy = createVincentPolicy({
-  packageName: "@agentic-ai/vincent-policy-payroll" as const,
+  packageName: "@agentic-ai/vincent-cycle_status_policy" as const,
 
   toolParamsSchema,
   userParamsSchema,
@@ -49,6 +49,11 @@ export const vincentPolicy = createVincentPolicy({
     const payPeriod = Number(userParams.payPeriodSeconds);
     const allowed = [];
     const denied = [];
+
+    if (!toolParams.employees || toolParams.employees.length === 0) {
+      return deny({ reason: "Employee list is empty. Payroll cannot proceed." });
+    }
+    
     for (const emp of toolParams.employees) {
       if (emp.status !== "active") {
         denied.push({ address: emp.address, reason: "Inactive employee" });

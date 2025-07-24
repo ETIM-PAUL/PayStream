@@ -4,13 +4,37 @@ import {
   init,
   suppressLitLogs,
 } from "@lit-protocol/vincent-scaffold-sdk/e2e";
+import { ethers } from "ethers";
 
 suppressLitLogs(false);
 
 import { getVincentToolClient } from "@lit-protocol/vincent-app-sdk";
 // Payroll Tool and Policy
 import { bundledVincentTool as payrollTool } from "../../vincent-packages/tools/payroll/dist/index.js";
-import { vincentPolicyMetadata as payrollPolicyMetadata } from "../../vincent-packages/policies/payroll-policy/dist/index.js";
+import { vincentPolicyMetadata as cycleStatusPolicyMetadata } from "../../vincent-packages/policies/cycle_status_policy/dist/index.js";
+import { vincentPolicyMetadata as signaturePolicyMetadata } from "../../vincent-packages/policies/cycle_status_policy/dist/index.js";
+import { EMPLOYEE_CONTRACT_ABI, EMPLOYEE_CONTRACT_ADDRESS } from "../../utils/employee_details.js";
+
+
+
+const domain = {
+    name: "CompanyAutomatedPayroll",
+    version: "1",
+    chainId: 1, // or your actual chainId
+    verifyingContract: "0x606CbC3D95E36c8b22bC671285154a722f25170E"
+  };
+  
+  const types = {
+    PayrollApproval: [
+      { name: "companyId", type: "string" },
+      { name: "companyName", type: "string" },
+      { name: "numEmployees", type: "uint256" },
+      { name: "creatorAddress", type: "address" },
+      { name: "nonce", type: "string" },
+      { name: "expiry", type: "uint256" }
+    ]
+  };
+
 
 (async () => {
   // Initialise the environment
@@ -30,7 +54,7 @@ import { vincentPolicyMetadata as payrollPolicyMetadata } from "../../vincent-pa
     {
       toolIpfsCids: [payrollTool.ipfsCid],
       toolPolicies: [
-        [payrollPolicyMetadata.ipfsCid], // Enable payroll policy for payroll tool
+        [cycleStatusPolicyMetadata.ipfsCid, signaturePolicyMetadata.ipfsCid], // Enable payroll policy for payroll tool
       ],
       toolPolicyParameterNames: [
         ["payrollWindowSeconds", "maxTotalPayroll"], // Example parameter names for payroll policy
@@ -45,7 +69,8 @@ import { vincentPolicyMetadata as payrollPolicyMetadata } from "../../vincent-pa
     {
       cidToNameMap: {
         [payrollTool.ipfsCid]: "Payroll Tool",
-        [payrollPolicyMetadata.ipfsCid]: "Payroll Policy",
+        [cycleStatusPolicyMetadata.ipfsCid]: "Payroll Policy",
+        [signaturePolicyMetadata.ipfsCid]: "Payroll Policy",
       },
       debug: true,
     }
@@ -53,7 +78,8 @@ import { vincentPolicyMetadata as payrollPolicyMetadata } from "../../vincent-pa
 
   const toolAndPolicyIpfsCids = [
     payrollTool.ipfsCid,
-    payrollPolicyMetadata.ipfsCid,
+    cycleStatusPolicyMetadata.ipfsCid,
+    signaturePolicyMetadata.ipfsCid,
   ];
 
   // Mint an Agent Wallet PKP
@@ -123,38 +149,99 @@ import { vincentPolicyMetadata as payrollPolicyMetadata } from "../../vincent-pa
     "💡 Testing on Base network - each payroll transfer costs approximately 0.0000001 ETH in gas fees"
   );
 
+  //fetch employees for a company
+    async function fetchEmployees(provider: ethers.providers.Provider) {
+        const contract = new ethers.Contract(
+        EMPLOYEE_CONTRACT_ADDRESS,
+        EMPLOYEE_CONTRACT_ABI,
+        provider
+        );
+        const employees = await contract.getCompanyEmployees(1);
+        return employees;
+    }
+
+    //fetch company details
+    async function fetchCompanyDetails(provider: ethers.providers.Provider) {
+        const contract = new ethers.Contract(
+        EMPLOYEE_CONTRACT_ADDRESS,
+        EMPLOYEE_CONTRACT_ABI,
+        provider
+        );
+        const employees = await contract.getCompanyDetails(1);
+        return employees;
+    }
+
+    const provider = new ethers.providers.JsonRpcProvider("https://yellowstone-rpc.litprotocol.com/", 175188);
+    const employees = await fetchEmployees(provider);
+    const company = await fetchCompanyDetails(provider);
+
+    const formattedEmployees = employees.map(e => ({
+        id: e.id.toString(), // or e[0].toString()
+        address: e.wallet,
+        position: e.position,
+        salary: e.salary.toString(), // or e[3].toString()
+        dob: e.dob, // as string, or convert to Date if needed
+        dateOfEmployment: e.dateOfEmployment, // as string, or convert to Date if needed
+        status: e.status
+      }));
+    
+    const formattedCompany = {
+      id: company.id.toString(), // or companyRaw[0].toString()
+      owner: company.owner,
+      admin1: company.admin1,
+      admin2: company.admin2,
+      lastPaymentCycle: company.lastPaymentCycle.toString() // or companyRaw[7].toString()
+    };
+
   // Array to collect transaction hashes from successful executions
   const transactionHashes: string[] = [];
+  const companyPayrollSigs: string[] = [];
+
+  // 2. Load the admin's private key (NEVER expose this in production code)
+  const privateKey:any = process.env.ADMIN1_PRIVATE_KEY;
+  const wallet = new ethers.Wallet(privateKey); 
+  const privateKey2:any = process.env.ADMIN2_PRIVATE_KEY;
+  const wallet2 = new ethers.Wallet(privateKey2); 
+    
+  const message = {
+    companyId: company?.id,
+    companyName: company?.name,
+    numEmployees: formattedEmployees?.length,
+    creatorAddress: company?.owner,
+    nonce: 1,
+    expiry: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+  };
+
+  // 3. Sign the typed data (EIP-712)
+  async function signTypedData1() {
+  const signature = await wallet._signTypedData(domain, types, message);
+  companyPayrollSigs.push(signature);
+  }
+  async function signTypedData2() {
+  const signature = await wallet2._signTypedData(domain, types, message);
+  companyPayrollSigs.push("0x2");
+  }
+
+await signTypedData1();
+await signTypedData2();
+
+console.log("employees", formattedEmployees)
+console.log("company", formattedCompany)
+console.log("Signature:", companyPayrollSigs);
 
   const TEST_TOOL_PARAMS = {
-    employees: [
-      {
-        address: "0x0daAd898fd44B4af14d0d169c1bbA4f13bcD7D26",
-        position: "Engineer",
-        salary: "0.00000000000000001",
-        status: "active" as "active",
-      },
-      {
-        address: "0x0daAd898fd44B4af14d0d169c1bbA4f13bcD7D26",
-        position: "Designer",
-        salary: "0.00000000000000002",
-        status: "active" as "active",
-      },
-      {
-        address: "0x0daAd898fd44B4af14d0d169c1bbA4f13bcD7D26",
-        position: "Manager",
-        salary: "0.00000000000000003",
-        status: "inactive" as "inactive",
-      },
-    ],
+    employees: formattedEmployees,
     tokenAddress: "0xF77025Db69882AD1c7f18D2A1C5B8821C091916C", // Base USDC Contract Address
     tokenDecimals: 18,
     rpcUrl: "https://yellowstone-rpc.litprotocol.com/",
     chainId: 175188,
+    signatures: companyPayrollSigs,
+    company: formattedCompany
   };
 
   const precheck = async () => {
     return await payrollToolClient.precheck(TEST_TOOL_PARAMS, {
+    rpcUrl:"https://yellowstone-rpc.litprotocol.com/",
       delegatorPkpEthAddress: agentWalletPkp.ethAddress,
     });
   };

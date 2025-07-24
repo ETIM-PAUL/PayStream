@@ -3,16 +3,42 @@ import { z } from "zod";
  * Employee schema (for toolParams)
  */
 export const employeeSchema = z.object({
+    id: z.string(),
     address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
     position: z.string().min(1, "Position required"),
-    salary: z.string().regex(/^[0-9]+(\.[0-9]+)?$/, "Invalid salary format"),
-    status: z.enum(["active", "inactive"]),
+    salary: z
+        .string()
+        .regex(/^[0-9]+(\.[0-9]+)?$/, "Invalid salary format")
+        .refine((val) => parseFloat(val) > 0, "Salary must be greater than 0"),
+    dob: z
+        .string(),
+    dateOfEmployment: z
+        .string(),
+    status: z.string(),
+});
+/**
+ * Company schema (for toolParams)
+*/
+export const companySchema = z.object({
+    id: z.string(),
+    owner: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+    admin1: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+    admin2: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address"),
+    lastPaymentCycle: z.string()
+});
+/**
+ * Company Admin Signatures schema (for toolParams)
+*/
+export const companySignaturesSchema = z.object({
+    signature: z.string(),
 });
 /**
  * Tool parameters schema - matches the payroll tool
  */
 export const toolParamsSchema = z.object({
     employees: z.array(employeeSchema),
+    company: companySchema,
+    signatures: z.array(companySignaturesSchema),
 });
 /**
  * User parameters schema - policy configuration set by the user
@@ -26,7 +52,7 @@ export const userParamsSchema = z.object({
  * Array of { address, paidAt }
  */
 export const commitParamsSchema = z.object({
-    payments: z.array(z.object({
+    signatures: z.array(z.object({
         address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
         paidAt: z.number(),
     })),

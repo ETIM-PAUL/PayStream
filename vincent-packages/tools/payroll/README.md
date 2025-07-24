@@ -42,9 +42,9 @@ const payrollParams = {
     // ...
   ],
   tokenAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base USDC
-  tokenDecimals: 6,
-  rpcUrl: "https://base.llamarpc.com",
-  chainId: 8453
+  tokenDecimals: 18,
+  rpcUrl: "https://yellowstone-rpc.litprotocol.com/",
+  chainId: 175188
 };
 ```
 
