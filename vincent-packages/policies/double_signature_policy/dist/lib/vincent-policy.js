@@ -92,7 +92,7 @@ export const vincentPolicy = createVincentPolicy({
             companyId: toolParams?.company?.id,
             companyName: toolParams?.company?.id,
             numEmployees: toolParams?.employees?.length,
-            creatorAddress: toolParams?.employees?.length,
+            creatorAddress: toolParams?.company?.owner,
             nonce: 1,
             expiry: Math.floor(Date.now() / 1000) + 3600
         }, toolParams?.signatures[0], toolParams?.signatures[1]);

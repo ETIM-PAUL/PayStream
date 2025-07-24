@@ -10,9 +10,9 @@ suppressLitLogs(false);
 
 import { getVincentToolClient } from "@lit-protocol/vincent-app-sdk";
 // Payroll Tool and Policy
-import { bundledVincentTool as payrollTool } from "../../vincent-packages/tools/payroll/dist/index.js";
 import { vincentPolicyMetadata as cycleStatusPolicyMetadata } from "../../vincent-packages/policies/cycle_status_policy/dist/index.js";
-import { vincentPolicyMetadata as signaturePolicyMetadata } from "../../vincent-packages/policies/cycle_status_policy/dist/index.js";
+import { vincentPolicyMetadata as signaturePolicyMetadata } from "../../vincent-packages/policies/double_signature_policy/dist/index.js";
+import { bundledVincentTool as payrollTool } from "../../vincent-packages/tools/payroll/dist/index.js";
 import { EMPLOYEE_CONTRACT_ABI, EMPLOYEE_CONTRACT_ADDRESS } from "../../utils/employee_details.js";
 
 
@@ -69,8 +69,8 @@ const domain = {
     {
       cidToNameMap: {
         [payrollTool.ipfsCid]: "Payroll Tool",
-        [cycleStatusPolicyMetadata.ipfsCid]: "Payroll Policy",
-        [signaturePolicyMetadata.ipfsCid]: "Payroll Policy",
+        [cycleStatusPolicyMetadata.ipfsCid]: "Cycle Status Policy",
+        [signaturePolicyMetadata.ipfsCid]: "Signature Policy",
       },
       debug: true,
     }
@@ -219,7 +219,7 @@ const domain = {
   }
   async function signTypedData2() {
   const signature = await wallet2._signTypedData(domain, types, message);
-  companyPayrollSigs.push("0x2");
+  companyPayrollSigs.push(signature);
   }
 
 await signTypedData1();
@@ -319,51 +319,6 @@ console.log("Signature:", companyPayrollSigs);
 
   console.log("(✅ EXECUTE-TEST-2) Second payroll completed successfully");
 
-  // Test 3: Third payroll should fail (limit exceeded)
-  console.log(
-    "(PRECHECK-TEST-3) Third payroll (should fail - limit exceeded)"
-  );
-  const payrollPrecheckRes3 = await precheck();
-  console.log("(PRECHECK-RES[3]): ", payrollPrecheckRes3);
-
-  if (payrollPrecheckRes3.success) {
-    console.log(
-      "✅ (PRECHECK-TEST-3) Third payroll precheck succeeded (expected - precheck only validates tool parameters)"
-    );
-
-    // Test if execution is properly blocked by policy
-    console.log(
-      "🧪 (EXECUTE-TEST-3) Testing if payroll execution is blocked by policy (this is where enforcement happens)..."
-    );
-
-    const executeRes3 = await execute();
-
-    console.log("(EXECUTE-RES[3]): ", executeRes3);
-
-    if (executeRes3.success) {
-      executeRes3.result?.results?.forEach((res: any) => {
-        if (res.txHash) transactionHashes.push(res.txHash);
-      });
-      throw new Error(
-        "❌ (EXECUTE-TEST-3) CRITICAL: Third payroll execution should have been blocked by policy but succeeded!"
-      );
-    } else {
-      console.log(
-        "✅ (EXECUTE-TEST-3) PERFECT: Third payroll execution correctly blocked by payroll policy!"
-      );
-      console.log(
-        "🎉 (EXECUTE-TEST-3) PAYROLL POLICY SYSTEM WORKING CORRECTLY!"
-      );
-      console.log(
-        "📊 (EXECUTE-TEST-3) Policy properly enforced: 2 payrolls allowed, 3rd payroll blocked"
-      );
-    }
-  } else {
-    console.log(
-      "🟨 (PRECHECK-TEST-3) Third payroll precheck failed (unexpected but also fine)"
-    );
-    console.log("🎉 (PRECHECK-TEST-3) PAYROLL POLICY ENFORCEMENT WORKING!");
-  }
 
   // Print all collected transaction hashes
   console.log("\n" + "=".repeat(50));

@@ -47,8 +47,8 @@ export const vincentPolicy = createVincentPolicy({
   ) => {
     const now = Math.floor(Date.now() / 1000);
     const payPeriod = Number(userParams.payPeriodSeconds);
-    const allowed = [];
-    const denied = [];
+    const allowed:any = [];
+    const denied:any = [];
 
     if (!toolParams.employees || toolParams.employees.length === 0) {
       return deny({ reason: "Employee list is empty. Payroll cannot proceed." });
@@ -79,8 +79,8 @@ export const vincentPolicy = createVincentPolicy({
     // Same logic as precheck for this policy
     const now = Math.floor(Date.now() / 1000);
     const payPeriod = Number(userParams.payPeriodSeconds);
-    const allowed = [];
-    const denied = [];
+    const allowed:any = [];
+    const denied:any = [];
     for (const emp of toolParams.employees) {
       if (emp.status !== "active") {
         denied.push({ address: emp.address, reason: "Inactive employee" });
@@ -105,7 +105,9 @@ export const vincentPolicy = createVincentPolicy({
   ) => {
     // Record payment timestamp for each paid employee
     const now = Math.floor(Date.now() / 1000);
-    const recorded = [];
+    const recorded:any = [];
+
+    //
     for (const payment of commitParams.payments) {
       setLastPaid(payment.address, now);
       recorded.push({ address: payment.address, paidAt: now });

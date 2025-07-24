@@ -71,6 +71,7 @@ export const vincentPolicy = createVincentPolicy({
         // Record payment timestamp for each paid employee
         const now = Math.floor(Date.now() / 1000);
         const recorded = [];
+        //
         for (const payment of commitParams.payments) {
             setLastPaid(payment.address, now);
             recorded.push({ address: payment.address, paidAt: now });
